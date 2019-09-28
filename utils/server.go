@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"liuma/models"
+	"mas/utils/config"
 	"net/http"
 )
 
@@ -20,7 +21,7 @@ func SendFileShard(ip string, shard []byte, index int, token string, statusMap c
 
 	client := http.Client{}
 	request, err := http.NewRequest("POST",
-		fmt.Sprintf("http://%s%s?index=%d", ip, SystemConfig.Server.StorageUrl, index),
+		fmt.Sprintf("http://%s%s?index=%d", ip, config.SystemConfig.Server.StorageUrl, index),
 		&buf)
 	if err != nil {
 		statusMap <- models.ShardsStatus{
@@ -30,7 +31,7 @@ func SendFileShard(ip string, shard []byte, index int, token string, statusMap c
 		}
 		return
 	}
-	request.Header.Add("systemToken", SystemConfig.Server.Token)
+	request.Header.Add("systemToken", config.SystemConfig.Server.Token)
 	request.Header.Add("token", token)
 	request.Header.Set("Content-Type", contentType)
 	response, err := client.Do(request)
@@ -59,9 +60,9 @@ func DeleteFileShard(ips []string, token string) {
 		go func(i string, ind int) {
 			client := http.Client{}
 			request, _ := http.NewRequest("DELETE",
-				fmt.Sprintf("http://%s%s?index=%d", i, SystemConfig.Server.StorageUrl, ind),
+				fmt.Sprintf("http://%s%s?index=%d", i, config.SystemConfig.Server.StorageUrl, ind),
 				nil)
-			request.Header.Add("systemToken", SystemConfig.Server.Token)
+			request.Header.Add("systemToken", config.SystemConfig.Server.Token)
 			request.Header.Add("token", token)
 			_, _ = client.Do(request)
 		}(ip, index)
@@ -77,9 +78,9 @@ func DeleteFileChuck(chuckInfo models.RedisChucks, token string) {
 		go func(i string, ind string) {
 			client := http.Client{}
 			request, _ := http.NewRequest("DELETE",
-				fmt.Sprintf("http://%s%s?index=%s", i, SystemConfig.Server.StorageChuckUrl, ind),
+				fmt.Sprintf("http://%s%s?index=%s", i, config.SystemConfig.Server.StorageChuckUrl, ind),
 				nil)
-			request.Header.Add("systemToken", SystemConfig.Server.Token)
+			request.Header.Add("systemToken", config.SystemConfig.Server.Token)
 			request.Header.Add("token", token)
 			_, _ = client.Do(request)
 		}(ip, index)

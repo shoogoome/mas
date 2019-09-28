@@ -1,9 +1,11 @@
-package mian
+package main
 
 import (
 	"google.golang.org/grpc"
 	"log"
 	pb "mas/models/physicalTransmission"
+	"mas/utils/config"
+	"mas/utils/rabbitmq"
 	"net"
 	"time"
 )
@@ -11,6 +13,16 @@ import (
 const (
 	port = ":5432"
 )
+
+// 定期发送心跳信号
+func StartHeartbeat() {
+	q := rabbitmq.New(config.SystemConfig.RabbitMQ.Host)
+	defer q.Close()
+	for {
+		q.Publish(config.SystemConfig.RabbitMQ.Queue, config.SystemConfig.Server.Server)
+		time.Sleep(5 * time.Second)
+	}
+}
 
 // 物理存储服务层启动入口
 func main() {
@@ -32,5 +44,7 @@ REGISTER:
 		log.Println("[!] gRPC注册失败: ", err)
 		goto REGISTER
 	}
+	// 启动活跃心跳信号
+	go StartHeartbeat()
 }
 

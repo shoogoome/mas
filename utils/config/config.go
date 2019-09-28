@@ -1,10 +1,10 @@
-package utils
+package config
 
 import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"liuma/exception"
-	"liuma/models"
+	"mas/exception"
+	"mas/models"
 	"os"
 	"strconv"
 	"strings"

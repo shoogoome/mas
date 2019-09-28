@@ -1,4 +1,4 @@
-package utils
+package rabbitmq
 
 import (
 	"encoding/json"

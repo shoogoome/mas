@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"mas/utils/config"
 	"net/http"
 	"time"
 )
@@ -24,8 +25,8 @@ type bodyIp struct {
 // 信号触发不采用rabbitmq是因为怕同时发起请求的话会串
 func SignalTrigger() chan string{
 
-	var serverIps = make(chan string, SystemConfig.Server.ServerNum)
-	for _, ip := range SystemConfig.Server.ServerIp {
+	var serverIps = make(chan string, config.SystemConfig.Server.ServerNum)
+	for _, ip := range config.SystemConfig.Server.ServerIp {
 		go signal(ip, serverIps)
 	}
 	// 等待响应
@@ -38,10 +39,10 @@ func signal (nip string, ips chan string) {
 
 	client := http.Client{}
 	request, _ := http.NewRequest("GET",
-		fmt.Sprintf("http://%s%s", nip, SystemConfig.Server.SignalUrl),
+		fmt.Sprintf("http://%s%s", nip, config.SystemConfig.Server.SignalUrl),
 		nil)
 
-	request.Header.Add("systemToken", SystemConfig.Server.Token)
+	request.Header.Add("systemToken", config.SystemConfig.Server.Token)
 	response, err := client.Do(request); if err != nil {
 		return
 	}

@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"liuma/exception/http_err"
+	"mas/utils/config"
 	"os"
 	"path"
 	"time"
@@ -20,7 +21,7 @@ func GzipFile(file []byte, name string) ([]byte, interface{}) {
 	fileName := fmt.Sprintf("%d", time.Now().Unix()) + ".tar.gz"
 	// 构造文件存储路径
 	filePath := path.Join(
-		SystemConfig.Server.FileTempPath,
+		config.SystemConfig.Server.FileTempPath,
 		fileName,
 	)
 	// 创建gzip对象

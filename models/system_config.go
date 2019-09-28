@@ -6,6 +6,8 @@ type SystemConfig struct {
 	MongoDB MongoDBConfig `yaml:"mongodb" json:"mongodb"`
 	// Redis配置
 	Redis RedisConfig `yaml:"redis" json:"redis"`
+	// RabbitMQ配置
+	RabbitMQ RabbitMQConfig `yaml:"rabbitmq" json:"rabbitmq"`
 	// 系统配置
 	Server ServerConfig
 }
@@ -24,6 +26,12 @@ type RedisConfig struct {
 	Port int `yaml:"port" json:"port"`
 }
 
+type RabbitMQConfig struct {
+	Host string `yaml:"host" json:"host"`
+	Queue string `yaml:"queue" json:"queue"`
+}
+
+
 type ServerConfig struct {
 	FileRootPath string
 	FileTempPath string
@@ -37,4 +45,5 @@ type ServerConfig struct {
 	Server string
 	ServerNum int
 	Resend int
+	GrpcClientNumber int
 }

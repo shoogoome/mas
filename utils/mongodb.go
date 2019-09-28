@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"mas/utils/config"
 	"time"
 )
 
@@ -48,10 +49,10 @@ func checkMongoClientConnection () {
 func NewMongoClient() (err error) {
 	connectString := fmt.Sprintf(
 		"mongodb://%s:%s@%s:%d",
-		SystemConfig.MongoDB.Username,
-		SystemConfig.MongoDB.Password,
-		SystemConfig.MongoDB.Host,
-		SystemConfig.MongoDB.Port,
+		config.SystemConfig.MongoDB.Username,
+		config.SystemConfig.MongoDB.Password,
+		config.SystemConfig.MongoDB.Host,
+		config.SystemConfig.MongoDB.Port,
 	)
 	mongoClientOptions := options.Client().ApplyURI(connectString)
 	mongoClientOptions.SetConnectTimeout(1 * time.Second)
@@ -65,6 +66,6 @@ func NewMongoClient() (err error) {
 	if err != nil {
 		return
 	}
-	MongoConn = MongoClient.Database(SystemConfig.MongoDB.DBName)
+	MongoConn = MongoClient.Database(config.SystemConfig.MongoDB.DBName)
 	return
 }

@@ -1,4 +1,4 @@
-package mian
+package main
 
 import (
 	"bytes"
@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mas/utils/config"
 
 	pb "mas/models/physicalTransmission"
-	"mas/utils"
 	"os"
 	"path"
 )
@@ -19,7 +19,7 @@ type server struct{}
 func (server) Upload(context context.Context, shardChuckDataInfo *pb.ShardChuckDataInfo) (*pb.ShardChuckMetaData, error) {
 
 	fileName := path.Join(
-		utils.SystemConfig.Server.FileRootPath,
+		config.SystemConfig.Server.FileRootPath,
 		fmt.Sprintf("%s.%d", shardChuckDataInfo.Metadata.FileHash, shardChuckDataInfo.Metadata.Index),
 	)
 	fileWrite, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0664);
@@ -39,9 +39,9 @@ func (server) Download(context context.Context, shardChuckMetaData *pb.ShardChuc
 
 	var filePath string
 	if shardChuckMetaData.Shard {
-		filePath = utils.SystemConfig.Server.FileRootPath
+		filePath = config.SystemConfig.Server.FileRootPath
 	} else {
-		filePath = utils.SystemConfig.Server.FileTempPath
+		filePath = config.SystemConfig.Server.FileTempPath
 	}
 
 	fileName := fmt.Sprintf("%s.%d", shardChuckMetaData.FileHash, shardChuckMetaData.Index)
@@ -56,12 +56,12 @@ func (server) Download(context context.Context, shardChuckMetaData *pb.ShardChuc
 
 // 删除分片数据
 func (server) DeleteShard(context context.Context, shardChuckMetaData *pb.ShardChuckMetaData) (*pb.ShardChuckMetaData, error) {
-	return nil, deleteFile(utils.SystemConfig.Server.FileRootPath, shardChuckMetaData.FileHash, shardChuckMetaData.Index)
+	return nil, deleteFile(config.SystemConfig.Server.FileRootPath, shardChuckMetaData.FileHash, shardChuckMetaData.Index)
 }
 
 // 删除分块数据
 func (server) DeleteChuck(context context.Context, shardChuckMetaData *pb.ShardChuckMetaData) (*pb.ShardChuckMetaData, error) {
-	return nil, deleteFile(utils.SystemConfig.Server.FileTempPath, shardChuckMetaData.FileHash, shardChuckMetaData.Index)
+	return nil, deleteFile(config.SystemConfig.Server.FileTempPath, shardChuckMetaData.FileHash, shardChuckMetaData.Index)
 }
 
 // 指定路径获取文件

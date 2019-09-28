@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"liuma/exception/http_err"
 	"liuma/models"
+	"mas/utils/config"
 	"strings"
 	"time"
 )
@@ -25,7 +26,7 @@ const (
  */
 func GenerateToken(info models.FileToken) (string,  interface{}){
 
-	key := SystemConfig.Server.Key
+	key := config.SystemConfig.Server.Key
 	key = strings.Replace(key, " ", "", -1); if key == "" {
 		return "", http_err.GetEnvKeyFail()
 	}
@@ -43,7 +44,7 @@ func VerificationToken(token string, tokenType int) (string, interface{}) {
 
 	var fileToken models.FileToken
 	// 环境变量异常
-	key := SystemConfig.Server.Key
+	key := config.SystemConfig.Server.Key
 	key = strings.Replace(key, " ", "", -1); if key == "" {
 		return "", http_err.GetEnvKeyFail()
 	}
