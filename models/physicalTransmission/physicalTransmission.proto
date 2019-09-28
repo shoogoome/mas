@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+option java_package = "io.grpc.examples";
+
+package physicalTransmission;
+
+
+service PhysicalTransmission {
+
+    // 完整上传
+    rpc Upload (ShardChuckDataInfo) returns (ShardChuckMetaData) {}
+
+    // 文件下载
+    rpc Download (ShardChuckMetaData) returns (ShardChuckDataInfo) {}
+
+    // 删除指定文件数据分片（即经过加密分片的数据）
+    rpc DeleteShard (ShardChuckMetaData) returns (ShardChuckMetaData) {}
+
+    // 删除指定文件数据分块（即未整合数据）
+    rpc DeleteChuck (ShardChuckMetaData) returns (ShardChuckMetaData) {}
+}
+
+
+// 分片或分块元数据信息
+message ShardChuckMetaData {
+
+    // hash
+    string fileHash = 1;
+
+    // 序号
+    int64 index = 2;
+
+    // 数据块类型
+    bool shard = 3;
+}
+
+// 分片或分块数据信息
+message ShardChuckDataInfo {
+
+    // 文件分片数据
+    bytes fileData = 4;
+
+    // 文件分片元数据
+    ShardChuckMetaData metadata = 5;
+}
+
