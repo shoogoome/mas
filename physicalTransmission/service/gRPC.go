@@ -8,18 +8,18 @@ import (
 )
 
 // 发送上传
-func GRPCUpload(client pb.PhysicalTransmissionClient, shard []byte, index int, fileInfo models.FileInfo, statusMap chan models.ShardsStatus) {
+func GRPCUpload(client pb.PhysicalTransmissionClient, shard []byte, index int, hash string, server string, statusMap chan models.ShardsStatus) {
 	// 上传物理数据
 	_, except := client.Upload(context.Background(), &pb.ShardChuckDataInfo{
 		FileData: shard,
 		Metadata: &pb.ShardChuckMetaData{
-			FileHash: fileInfo.FileHash,
+			FileHash: hash,
 			Index:    int64(index),
 			Shard:    true,
 		},
 	})
 	status := models.ShardsStatus{
-		Ip:    fileInfo.StorageServerIp[len(fileInfo.StorageServerIp)-1],
+		Ip:    server,
 		Index: index,
 		Client: client,
 	}
@@ -31,7 +31,7 @@ func GRPCUpload(client pb.PhysicalTransmissionClient, shard []byte, index int, f
 	statusMap <- status
 }
 
-// 删除分片
+// 删除分块
 func GRPCDeleteChuck(serverIp []string, hash string) {
 	clients, _, _ := physicalTransmission.NewAppointGrpcConnection(serverIp)
 

@@ -1,6 +1,8 @@
 package http_err
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func GetFileFail() (ctx MASExceptBase){
 	ctx.Status = false
@@ -72,3 +74,30 @@ func DownloadFail() (ctx MASExceptBase) {
 	return ctx
 }
 
+func FileIsNotInit() (ctx MASExceptBase) {
+	ctx.Status = false
+	ctx.Code = 5410
+	ctx.Msg = "文件未初始化"
+	return ctx
+}
+
+func FileIsPersistence() (ctx MASExceptBase) {
+	ctx.Status = false
+	ctx.Code = 5411
+	ctx.Msg = "文件已存在"
+	return ctx
+}
+
+func ChuckSizeOverRegulations() (ctx MASExceptBase) {
+	ctx.Status = false
+	ctx.Code = 5412
+	ctx.Msg = "上传分块大小大于规定最大分块上传大小"
+	return ctx
+}
+
+func FileIsNotPersistence() (ctx MASExceptBase) {
+	ctx.Status = false
+	ctx.Code = 5413
+	ctx.Msg = "文件未完成上传"
+	return ctx
+}

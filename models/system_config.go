@@ -47,6 +47,8 @@ type ServerConfig struct {
 	StorageUrl string
 	// 存储分块路由
 	StorageChuckUrl string
+	// 分块上传最大大小
+	ChuckMaxSize int64
 	// 系统token
 	Token string
 	// hmac加密key

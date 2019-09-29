@@ -106,9 +106,9 @@ func newGrpcClientConnection(server []string) (chan physicalTransmission.Physica
 	conn := make(chan physicalTransmission.PhysicalTransmissionClient, dataLenght)
 	realIps := make(chan string, dataLenght)
 	lock := make(chan bool)
-	// 随机填充gRPC服务连接
+	// 填充gRPC服务连接
 	for _, ip := range server {
-		go newGrpcConnection(ip + config.SystemConfig.Server.GrpcPort, conn, realIps, lock)
+		newGrpcConnection(ip + config.SystemConfig.Server.GrpcPort, conn, realIps, lock)
 	}
 	// 监控连接服务
 	// 连接失败次数大于最大容错数直接报错

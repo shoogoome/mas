@@ -52,7 +52,7 @@ func getRandomServerIp() (server []string){
 
 	rand.Seed(time.Now().Unix())
 
-	serverIP := make([]string, len(dataServers))
+	serverIP := make([]string, 0)
 	mutex.Lock()
 	// 获取全部服务ip
 	for k := range dataServers {

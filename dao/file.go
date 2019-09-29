@@ -42,6 +42,27 @@ func SaveFileInfo(fileInfo models.FileInfo) interface{} {
 	return nil
 }
 
+// 更新文件数据
+func UpdateFileInfo(fileInfo models.FileInfo) interface{} {
+	// 写入到数据库
+	collection := mongo.MongoConn.Collection("fileserver")
+	_, err := collection.UpdateOne(
+		context.Background(),
+		&bson.D{
+			{"hash", fileInfo.FileHash},
+		},
+		&bson.M {
+			"hash": fileInfo.FileHash,
+			"size": fileInfo.FileSize,
+			"server_ip": fileInfo.StorageServerIp,
+		},
+	)
+	if err != nil {
+		return http_err.SaveFileInfoError(err)
+	}
+	return nil
+}
+
 // 查询文件是否存在
 func SearchFile(hash string) bool {
 	fileInfo := GetFileInfo(hash)

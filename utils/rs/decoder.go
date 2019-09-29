@@ -1,11 +1,12 @@
 package rs
 
 import (
-	"bytes"
-	"github.com/klauspost/reedsolomon"
 	"MAS/exception/http_err"
 	"MAS/models"
-	"MAS/utils"
+	"bytes"
+	"github.com/klauspost/reedsolomon"
+	"mas/physicalTransmission"
+	"mas/physicalTransmission/service"
 )
 
 type decoder struct {
@@ -19,7 +20,7 @@ func NewDecoder (shards [][]byte, serverIP []string) *decoder {
 	return &decoder{shards, enc, serverIP}
 }
 
-func (this *decoder) Decode (token string) ([]byte, interface{}){
+func (this *decoder) Decode (hash string) ([]byte, interface{}){
 	// 检查数据分片是否正常，不正常则尝试修复数据
 	ok, err := this.enc.Verify(this.shards); if !ok {
 
@@ -29,18 +30,26 @@ func (this *decoder) Decode (token string) ([]byte, interface{}){
 		if err != nil {
 			return nil, http_err.DamageToRawData()
 		} else {
+
+			var server []string
+			for _, index := range unHealth {
+				server = append(server, this.serverIP[index])
+			}
+			clients, ips, except := physicalTransmission.NewAppointGrpcConnection(server)
+			if except != nil {
+				return nil, http_err.StorageServerInsufficient()
+			}
+
 			// 修复分片数据后将新分片传输到指定服务
 			// 因获取时shards顺序已与serverIP顺序对应 所以可以直接按序操作
-			var statusMap = make(chan models.ShardsStatus, RsConfig.AllShards)
-			for _, index := range unHealth {
-				go utils.SendFileShard(
-					this.serverIP[index],
-					this.shards[index],
-					index,
-					token,
-					statusMap,
-					)
+			var statusMap = make(chan models.ShardsStatus, len(unHealth))
+			for i := 0; i < len(ips); i++ {
+				client := <- clients
+				go service.GRPCUpload(
+					client, this.shards[unHealth[i]],
+					unHealth[i], hash, <- ips, statusMap)
 			}
+
 		}
 		ok, err = this.enc.Verify(this.shards)
 		if !ok {
