@@ -3,17 +3,15 @@ package physicalTransmission
 import (
 	"mas/utils/config"
 	"mas/utils/rabbitmq"
+	"math/rand"
 	"strconv"
 	"sync"
 	"time"
 )
 
-type dataServerInfo struct {
-	serverIp string
-	registerTime time.Time
-}
 
-var dataServers = make([]dataServerInfo, 1)
+
+var dataServers map[string]time.Time
 var mutex sync.RWMutex
 
 // 监听数据服务
@@ -30,9 +28,7 @@ func ListenHearbeat() {
 			panic(e)
 		}
 		mutex.Lock()
-		dataServers = append(dataServers, dataServerInfo {
-			dataServer, time.Now(),
-		})
+		dataServers[dataServer] = time.Now()
 		mutex.Unlock()
 	}
 }
@@ -41,24 +37,30 @@ func ListenHearbeat() {
 func removeExpiredDataServer() {
 	for {
 		time.Sleep(5 * time.Second)
-		index := make([]int, 1)
 		mutex.Lock()
-		// 筛选过期服务
-		for i, v := range dataServers {
-			if v.registerTime.Add(10 * time.Second).Before(time.Now()) {
-				index = append(index, i)
+		for s, v := range dataServers {
+			if v.Add(10 * time.Second).Before(time.Now()) {
+				delete(dataServers, s)
 			}
-		}
-		// 移除过期服务
-		for _, i := range index {
-			dataServers[i] = dataServers[len(dataServers) - 1]
-			dataServers = dataServers[:len(dataServers) - 1]
 		}
 		mutex.Unlock()
 	}
 }
 
-// 随机获取数据服务
+// 获取随机IP
+func getRandomServerIp() (server []string){
 
+	rand.Seed(time.Now().Unix())
 
-
+	serverIP := make([]string, len(dataServers))
+	mutex.Lock()
+	// 获取全部服务ip
+	for k := range dataServers {
+		serverIP = append(serverIP, k)
+	}
+	// 随机填充
+	for _, k := range rand.Perm(len(dataServers)) {
+		server = append(server, serverIP[k])
+	}
+	return server
+}

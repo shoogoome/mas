@@ -22,12 +22,12 @@ func (server) Upload(context context.Context, shardChuckDataInfo *pb.ShardChuckD
 		config.SystemConfig.Server.FileRootPath,
 		fmt.Sprintf("%s.%d", shardChuckDataInfo.Metadata.FileHash, shardChuckDataInfo.Metadata.Index),
 	)
-	fileWrite, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0664);
+	fileWrite, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0664)
 	if err != nil {
 		return nil, err
 	}
 	defer fileWrite.Close()
-	_, err = io.Copy(fileWrite, bytes.NewReader(shardChuckDataInfo.FileData));
+	_, err = io.Copy(fileWrite, bytes.NewReader(shardChuckDataInfo.FileData))
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func getFile(fileRootPath string, fileName string) []byte {
 		fileRootPath,
 		fileName,
 	)
-	fileBytes, err := ioutil.ReadFile(filePath);
+	fileBytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil
 	}

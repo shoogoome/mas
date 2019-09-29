@@ -1,4 +1,4 @@
-package utils
+package gzipUtils
 
 import (
 	"archive/tar"
@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"liuma/exception/http_err"
+	"MAS/exception/http_err"
 	"mas/utils/config"
 	"os"
 	"path"

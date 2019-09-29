@@ -1,4 +1,4 @@
-package utils
+package tokenUtils
 
 import (
 	"crypto/hmac"
@@ -7,30 +7,31 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"liuma/exception/http_err"
-	"liuma/models"
+	"mas/exception/http_err"
+	"mas/models"
 	"mas/utils/config"
 	"strings"
 	"time"
 )
 
 const (
-
-	Upload = 1
+	Upload   = 1
 	Download = 2
-	All = 3
+	All      = 3
 )
 
 /**
 生成token
- */
-func GenerateToken(info models.FileToken) (string,  interface{}){
+*/
+func GenerateToken(info models.FileToken) (string, interface{}) {
 
 	key := config.SystemConfig.Server.Key
-	key = strings.Replace(key, " ", "", -1); if key == "" {
+	key = strings.Replace(key, " ", "", -1);
+	if key == "" {
 		return "", http_err.GetEnvKeyFail()
 	}
-	infoString, err := json.Marshal(info); if err != nil {
+	infoString, err := json.Marshal(info);
+	if err != nil {
 		return "", http_err.MarshalFail()
 	}
 	payloadString := base64.StdEncoding.EncodeToString(infoString)
@@ -39,17 +40,19 @@ func GenerateToken(info models.FileToken) (string,  interface{}){
 
 /**
 验证token
- */
+*/
 func VerificationToken(token string, tokenType int) (string, interface{}) {
 
 	var fileToken models.FileToken
 	// 环境变量异常
 	key := config.SystemConfig.Server.Key
-	key = strings.Replace(key, " ", "", -1); if key == "" {
+	key = strings.Replace(key, " ", "", -1);
+	if key == "" {
 		return "", http_err.GetEnvKeyFail()
 	}
 	// token格式错误
-	tokenList := strings.Split(token, "."); if len(tokenList) != 2 {
+	tokenList := strings.Split(token, ".");
+	if len(tokenList) != 2 {
 		return "", http_err.TokenVerificationFail()
 	}
 
@@ -60,15 +63,17 @@ func VerificationToken(token string, tokenType int) (string, interface{}) {
 		return "", http_err.TokenVerificationFail()
 	}
 	// base64解码
-	infoString, err := base64.StdEncoding.DecodeString(payloadString); if err != nil {
+	infoString, err := base64.StdEncoding.DecodeString(payloadString);
+	if err != nil {
 		return "", http_err.TokenVerificationFail()
 	}
 	// 反序列化
-	err = json.Unmarshal(infoString, &fileToken); if err != nil {
+	err = json.Unmarshal(infoString, &fileToken);
+	if err != nil {
 		return "", http_err.TokenVerificationFail()
 	}
 	// 验证token使用类型
-	if fileToken.TokenType & tokenType == 0 {
+	if fileToken.TokenType&tokenType == 0 {
 		return "", http_err.TokenVerificationFail()
 	}
 	// 验证token是否过期
@@ -80,11 +85,9 @@ func VerificationToken(token string, tokenType int) (string, interface{}) {
 
 /**
 加密字符串
- */
+*/
 func encryptionString(payloadString string, key string) string {
 	ghmac := hmac.New(sha256.New, []byte(key))
 	ghmac.Write([]byte(payloadString))
 	return hex.EncodeToString(ghmac.Sum([]byte(nil)))
 }
-
-

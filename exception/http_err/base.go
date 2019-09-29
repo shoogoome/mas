@@ -1,7 +1,7 @@
 package http_err
 
-import "liuma/models"
+import "MAS/models"
 
-type LiumaExceptBase struct {
+type MASExceptBase struct {
 	models.RestfulApi
 }

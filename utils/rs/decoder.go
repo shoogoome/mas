@@ -3,9 +3,9 @@ package rs
 import (
 	"bytes"
 	"github.com/klauspost/reedsolomon"
-	"liuma/exception/http_err"
-	"liuma/models"
-	"liuma/utils"
+	"MAS/exception/http_err"
+	"MAS/models"
+	"MAS/utils"
 )
 
 type decoder struct {

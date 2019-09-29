@@ -33,17 +33,32 @@ type RabbitMQConfig struct {
 
 
 type ServerConfig struct {
+	// 分片存储根目录
 	FileRootPath string
+	// 分块存储根目录
 	FileTempPath string
+	// 是否启动gzip
 	Gzip bool
+	// 所有服务ip
 	ServerIp []string
+	// 活跃信号
 	SignalUrl string
+	// 存储路由
 	StorageUrl string
+	// 存储分块路由
 	StorageChuckUrl string
+	// 系统token
 	Token string
+	// hmac加密key
 	Key string
+	// 当前服务ip
 	Server string
+	// 服务总数
 	ServerNum int
+	// 最大分片重发次数
 	Resend int
-	GrpcClientNumber int
+	// gRPC连接重试
+	GrpcRetry int
+	// gRPC服务端口
+	GrpcPort string
 }

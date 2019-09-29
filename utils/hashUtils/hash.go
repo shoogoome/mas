@@ -1,10 +1,10 @@
-package utils
+package hashUtils
 
 import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"liuma/exception/http_err"
+	"MAS/exception/http_err"
 )
 
 // 哈希值计算

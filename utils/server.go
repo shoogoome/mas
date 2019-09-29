@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"liuma/models"
+	"MAS/models"
 	"mas/utils/config"
 	"net/http"
 )

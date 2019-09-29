@@ -2,72 +2,72 @@ package http_err
 
 import "fmt"
 
-func GetFileFail() (ctx LiumaExceptBase){
+func GetFileFail() (ctx MASExceptBase){
 	ctx.Status = false
-	ctx.Code = 5541
+	ctx.Code = 5401
 	ctx.Msg = "获取文件失败"
 	return ctx
 }
 
-func CalculateHashError() (ctx LiumaExceptBase) {
+func CalculateHashError() (ctx MASExceptBase) {
 	ctx.Status = false
-	ctx.Code = 5542
+	ctx.Code = 5402
 	ctx.Msg = "计算文件hash失败"
 	return ctx
 }
 
-func TokenFail() (ctx LiumaExceptBase) {
+func TokenFail() (ctx MASExceptBase) {
 	ctx.Status = false
-	ctx.Code = 5543
+	ctx.Code = 5403
 	ctx.Msg = "token无效或过期，请重新获取token"
 	return ctx
 }
 
-func DamageToRawData() (ctx LiumaExceptBase) {
+func DamageToRawData() (ctx MASExceptBase) {
 	ctx.Status = false
-	ctx.Code = 5544
+	ctx.Code = 5404
 	ctx.Msg = "原始文件损坏，请重新上传"
 	return ctx
 }
 
-func UploadFail() (ctx LiumaExceptBase) {
+func UploadFail() (ctx MASExceptBase) {
 	ctx.Status = false
-	ctx.Code = 5545
+	ctx.Code = 5405
 	ctx.Msg = "上传失败"
 	return ctx
 }
 
-func ChuckExists() (ctx LiumaExceptBase) {
+func ChuckExists() (ctx MASExceptBase) {
 	ctx.Status = false
-	ctx.Code = 5545
+	ctx.Code = 5405
 	ctx.Msg = "分片存在"
 	return ctx
 }
 
-func StorageUnexpectedTermination(err error) (ctx LiumaExceptBase) {
+func StorageUnexpectedTermination(err error) (ctx MASExceptBase) {
 	ctx.Status = false
-	ctx.Code = 5546
+	ctx.Code = 5406
 	ctx.Msg = fmt.Sprintf("存储意外终止: %v", err)
 	return ctx
 }
 
-func FileIsNotExists() (ctx LiumaExceptBase) {
+func FileIsNotExists() (ctx MASExceptBase) {
 	ctx.Status = false
-	ctx.Code = 5547
+	ctx.Code = 5407
 	ctx.Msg = "文件不存在"
 	return ctx
 }
 
-func ResendOver() (ctx LiumaExceptBase) {
+func ResendOver() (ctx MASExceptBase) {
 	ctx.Status = false
-	ctx.Code = 5548
+	ctx.Code = 5408
 	ctx.Msg = "分片重发超出设定"
 	return ctx
 }
 
-func DownloadFail() (ctx LiumaExceptBase) {
+func DownloadFail() (ctx MASExceptBase) {
 	ctx.Status = false
-	ctx.Code = 5549
+	ctx.Code = 5409
 	ctx.Msg = "下载失败"
 	return ctx
 }

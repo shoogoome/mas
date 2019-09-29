@@ -2,7 +2,7 @@ package rs
 
 import (
 	"github.com/klauspost/reedsolomon"
-	"liuma/exception/http_err"
+	"MAS/exception/http_err"
 )
 
 type encoder struct {

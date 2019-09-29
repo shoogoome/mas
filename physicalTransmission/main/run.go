@@ -10,10 +10,6 @@ import (
 	"time"
 )
 
-const (
-	port = ":5432"
-)
-
 // 定期发送心跳信号
 func StartHeartbeat() {
 	q := rabbitmq.New(config.SystemConfig.RabbitMQ.Host)
@@ -29,7 +25,7 @@ func main() {
 
 	// tcp连接
 TCP:
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", config.SystemConfig.Server.GrpcPort)
 	if err != nil {
 		time.Sleep(time.Second * 3)
 		log.Println("[!] tcp连接错误: ", err)

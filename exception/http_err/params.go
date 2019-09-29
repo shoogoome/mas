@@ -2,21 +2,21 @@ package http_err
 
 import "fmt"
 
-func UnmarshalBodyError () (ctx LiumaExceptBase){
+func UnmarshalBodyError () (ctx MASExceptBase){
 	ctx.Status = false
-	ctx.Code = 5521
+	ctx.Code = 5201
 	ctx.Msg = "读取body数据错误"
 	return ctx
 }
 
-func MarshalFail() (ctx LiumaExceptBase){
+func MarshalFail() (ctx MASExceptBase){
 	ctx.Status = false
-	ctx.Code = 5522
+	ctx.Code = 5202
 	ctx.Msg = "序列化失败"
 	return ctx
 }
 
-func LengthIsNotAllow(ob string, min int, max int) (ctx LiumaExceptBase) {
+func LengthIsNotAllow(ob string, min int, max int) (ctx MASExceptBase) {
 
 	msg := fmt.Sprintf("%s参数长度", ob)
 	if min != -1 {
@@ -27,14 +27,14 @@ func LengthIsNotAllow(ob string, min int, max int) (ctx LiumaExceptBase) {
 	}
 
 	ctx.Status = false
-	ctx.Code = 5523
+	ctx.Code = 5203
 	ctx.Msg = msg
 	return ctx
 }
 
-func LackParams(par string) (ctx LiumaExceptBase){
+func LackParams(par string) (ctx MASExceptBase){
 	ctx.Status = false
-	ctx.Code = 5524
+	ctx.Code = 5204
 	ctx.Msg = fmt.Sprintf("缺少%s参数", par)
 	return ctx
 }
