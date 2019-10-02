@@ -1,11 +1,11 @@
-package rs
+package models
 
 import (
 	"os"
 	"strconv"
 )
 
-type RSConfig struct {
+type rsConfig struct {
 	// 数据分片数量
 	DataShards int
 	// 校验分片
@@ -16,7 +16,7 @@ type RSConfig struct {
 
 
 // 启动系统时通过环境变量初始化对象（保持动态）
-var RsConfig RSConfig
+var RsConfig rsConfig
 
 
 func InitRsConfig() {
@@ -25,3 +25,4 @@ func InitRsConfig() {
 	RsConfig.ParityShards, _ = strconv.Atoi(os.Getenv("ParityShards"))
 	RsConfig.AllShards = RsConfig.DataShards + RsConfig.ParityShards
 }
+

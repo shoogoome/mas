@@ -123,6 +123,7 @@ func (this *FileSystemController) InitFileInfo() {
 // header: token
 // get: chunk 分块序号 从1开始
 // form-data: file 分块数据
+// @router /api/file/upload/chuck [post]
 func (this *FileSystemController) ChunkUpload() {
 
 	hash := this.LoadHash(tokenUtils.Upload)
@@ -196,7 +197,7 @@ func (this *FileSystemController) ChunkUpload() {
 // 完成上传
 // header: systemToken
 // header: token
-// @router /upload/finish [get]
+// @router /api/file/upload/finish [get]
 func (this *FileSystemController) Finish() {
 	this.Verification()
 	hash := this.LoadHash(tokenUtils.Upload)
@@ -213,7 +214,7 @@ func (this *FileSystemController) Finish() {
 
 	redisConn := this.RedisConn()
 	defer redisConn.Close()
-	chuckInfoString, err := redis.String(redisConn.Do("get", hash));
+	chuckInfoString, err := redis.String(redisConn.Do("get", hash))
 	if err != nil {
 		this.Exception(http_err.UploadFail())
 	}
@@ -222,7 +223,7 @@ func (this *FileSystemController) Finish() {
 	if len(chuckInfoString) == 0 {
 		this.Exception(http_err.UploadFail())
 	}
-	err = json.Unmarshal([]byte(chuckInfoString), &chuckInfo);
+	err = json.Unmarshal([]byte(chuckInfoString), &chuckInfo)
 	if err != nil {
 		this.Exception(http_err.UploadFail())
 	}
@@ -305,7 +306,7 @@ func (this *FileSystemController) Finish() {
 
 // 文件下载
 // header: token 下载令牌
-// @router /download [get]
+// @router /api/file/upload/download [get]
 func (this *FileSystemController) Download() {
 	hash := this.LoadHash(tokenUtils.Download)
 
@@ -318,7 +319,7 @@ func (this *FileSystemController) Download() {
 		this.Exception(http_err.FileIsNotPersistence())
 	}
 
-	shards := make([][]byte, rs.RsConfig.AllShards)
+	shards := make([][]byte, models.RsConfig.AllShards)
 	// 获取分片数据
 	var mu sync.RWMutex
 	var lock = make(chan int)
@@ -342,7 +343,7 @@ func (this *FileSystemController) Download() {
 		}(index, lock)
 	}
 	// 等待读取所有分片次数
-	for i := 0; i < rs.RsConfig.AllShards; i++ {
+	for i := 0; i < models.RsConfig.AllShards; i++ {
 		<- lock
 	}
 	// 获取原文件
@@ -355,7 +356,8 @@ func (this *FileSystemController) Download() {
 	}
 	// gunzip
 	if config.SystemConfig.Server.Gzip {
-		dd, except = gzipUtils.GunzipFile(dd); if except != nil {
+		dd, except = gzipUtils.GunzipFile(dd)
+		if except != nil {
 			service.GRPCDeleteShard(fileInfo.StorageServerIp, hash)
 			this.Exception(except)
 		}

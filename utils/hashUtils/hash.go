@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"MAS/exception/http_err"
+	"mas/exception/http_err"
 )
 
 // 哈希值计算

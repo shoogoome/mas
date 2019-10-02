@@ -4,9 +4,10 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"mas/exception/http_err"
+	"mas/models"
 	"mas/models/physicalTransmission"
 	"mas/utils/config"
-	"mas/utils/rs"
+	//"mas/utils/rs"
 	"math/rand"
 	"sync"
 	"time"
@@ -98,7 +99,7 @@ func newGrpcClientConnection(server []string) (chan physicalTransmission.Physica
 
 	dataLenght := len(server)
 	// 存储服务数量小于总数据分片数则直接报错
-	tolerant := dataLenght - rs.RsConfig.AllShards
+	tolerant := dataLenght - models.RsConfig.AllShards
 	if tolerant < 0 {
 		return nil, nil, http_err.StorageServerInsufficient()
 	}

@@ -1,10 +1,10 @@
 package dao
 
 import (
-	"MAS/exception/http_err"
-	"MAS/models"
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
+	"mas/exception/http_err"
+	"mas/models"
 	"mas/utils/mongo"
 )
 
@@ -29,13 +29,8 @@ func SaveFileInfo(fileInfo models.FileInfo) interface{} {
 	collection := mongo.MongoConn.Collection("fileserver")
 	_, err := collection.InsertOne(
 		context.Background(),
-		//&bson.M {
-		//	"hash": fileInfo.Hash,
-		//	"size": fileInfo.Size,
-		//	"server_ip": fileInfo.ServerIp,
-		//}
 		fileInfo,
-	);
+	)
 	if err != nil {
 		return http_err.SaveFileInfoError(err)
 	}
@@ -51,9 +46,9 @@ func UpdateFileInfo(fileInfo models.FileInfo) interface{} {
 		&bson.D{
 			{"hash", fileInfo.FileHash},
 		},
-		&bson.M {
-			"hash": fileInfo.FileHash,
-			"size": fileInfo.FileSize,
+		&bson.M{
+			"hash":      fileInfo.FileHash,
+			"size":      fileInfo.FileSize,
 			"server_ip": fileInfo.StorageServerIp,
 		},
 	)

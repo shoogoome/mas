@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"MAS/exception/http_err"
+	"mas/exception/http_err"
 	"mas/utils/config"
 	"os"
 	"path"
@@ -37,11 +37,13 @@ func GzipFile(file []byte, name string) ([]byte, interface{}) {
 		Size: int64(len(file)),
 	}
 	// 写入文件header
-	err := tw.WriteHeader(&header); if err != nil {
+	err := tw.WriteHeader(&header);
+	if err != nil {
 		return file, http_err.GzipFail()
 	}
 	a := bytes.NewReader(file)
-	_, err = io.Copy(tw, a); if err != nil {
+	_, err = io.Copy(tw, a);
+	if err != nil {
 		return file, http_err.GzipFail()
 	}
 	// 这里需提前close流 且顺序不能交换
@@ -61,17 +63,20 @@ func GzipFile(file []byte, name string) ([]byte, interface{}) {
 func GunzipFile(file []byte) ([]byte, interface{}) {
 
 	srcFile := bytes.NewReader(file)
-	gr, err := gzip.NewReader(srcFile); if err != nil {
+	gr, err := gzip.NewReader(srcFile);
+	if err != nil {
 		return file, http_err.GunzipFail()
 	}
 	defer gr.Close()
 	tr := tar.NewReader(gr)
 	// 读取文件
-	_, err = tr.Next(); if err != nil {
+	_, err = tr.Next();
+	if err != nil {
 		return file, http_err.GunzipFail()
 	}
 	// 转换byte类型
-	b, err := ioutil.ReadAll(tr); if err != nil {
+	b, err := ioutil.ReadAll(tr);
+	if err != nil {
 		return file, http_err.GunzipFail()
 	}
 	return b, nil

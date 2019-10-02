@@ -1,6 +1,6 @@
 package http_err
 
-import "MAS/models"
+import "mas/models"
 
 type MASExceptBase struct {
 	models.RestfulApi

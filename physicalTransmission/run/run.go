@@ -1,4 +1,4 @@
-package main
+package run
 
 import (
 	"google.golang.org/grpc"
@@ -21,7 +21,7 @@ func StartHeartbeat() {
 }
 
 // 物理存储服务层启动入口
-func main() {
+func Run() {
 
 	// tcp连接
 TCP:

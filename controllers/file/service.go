@@ -41,7 +41,7 @@ func (this *FileSystemController) saveFile(ddbyte []byte, fileInfo models.FileIn
 		ddbyte, _ = gzipUtils.GzipFile(ddbyte, fileInfo.FileName)
 	}
 	// server
-	clients, ips, except := physicalTransmission.NewRandomGrpcConnection();
+	clients, ips, except := physicalTransmission.NewRandomGrpcConnection()
 	if except != nil {
 		this.Exception(except)
 	}
@@ -52,7 +52,7 @@ func (this *FileSystemController) saveFile(ddbyte []byte, fileInfo models.FileIn
 		this.Exception(except)
 	}
 
-	var statusMap = make(chan models.ShardsStatus, rs.RsConfig.AllShards)
+	var statusMap = make(chan models.ShardsStatus, models.RsConfig.AllShards)
 	// 数据分片发送至存储服务端
 	for index, shard := range shards {
 		ip := <-ips
@@ -65,7 +65,7 @@ func (this *FileSystemController) saveFile(ddbyte []byte, fileInfo models.FileIn
 	// 重新修复分片并再次上传
 
 	// 分片计数
-	count := rs.RsConfig.AllShards
+	count := models.RsConfig.AllShards
 	// 允许单一分片重发次数
 	resend := make([]int, count)
 	for {

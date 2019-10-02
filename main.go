@@ -1,25 +1,23 @@
 package main
 
 import (
-	"mas/physicalTransmission"
-	_ "mas/routers"
 	"github.com/astaxie/beego"
-	"mas/utils/rs"
+	"mas/models"
+	"mas/physicalTransmission/run"
+	_ "mas/routers"
 )
-
 
 func init() {
 
 	// 监听存储服务信号
-	go physicalTransmission.ListenHearbeat()
+	//go physicalTransmission.ListenHearbeat()
 	// 初始化rs纠删配置
-	go rs.InitRsConfig()
-	// 初始化gRPC连接池
-	//go physicalTransmission.InitGrpcClientPool()
+	go models.InitRsConfig()
+	// 启动存储服务端
+	go run.Run()
 
 }
 
 func main() {
 	beego.Run()
 }
-

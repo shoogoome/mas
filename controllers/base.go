@@ -30,7 +30,8 @@ func (this *ControllerBase) Verification() {
 func (this *ControllerBase) LoadHash(tokenType int) string {
 
 	token := this.Ctx.Input.Header("token")
-	hash, except := tokenUtils.VerificationToken(token, tokenType); if except != nil {
+	hash, except := tokenUtils.VerificationToken(token, tokenType)
+	if except != nil {
 		this.Exception(except)
 	}
 	return hash
