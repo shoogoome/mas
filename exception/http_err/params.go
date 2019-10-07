@@ -35,6 +35,6 @@ func LengthIsNotAllow(ob string, min int, max int) (ctx MASExceptBase) {
 func LackParams(par string) (ctx MASExceptBase){
 	ctx.Status = false
 	ctx.Code = 5204
-	ctx.Msg = fmt.Sprintf("缺少%s参数", par)
+	ctx.Msg = fmt.Sprintf("%s 参数为必填参数", par)
 	return ctx
 }

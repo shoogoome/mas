@@ -1,6 +1,7 @@
 package physicalTransmission
 
 import (
+	"fmt"
 	"mas/utils/config"
 	"mas/utils/rabbitmq"
 	"math/rand"
@@ -16,20 +17,34 @@ var mutex sync.RWMutex
 
 // 监听数据服务
 func ListenHearbeat() {
-	q := rabbitmq.New(config.SystemConfig.RabbitMQ.Host)
-	defer q.Close()
 
-	q.Bind(config.SystemConfig.RabbitMQ.Queue)
+	dataServers = make(map[string]time.Time)
+Connection:
+	q, e := rabbitmq.New(config.SystemConfig.RabbitMQ.Host)
+	if e != nil {
+		time.Sleep(time.Second * 3)
+		fmt.Println("[!] rabbitmq connection fail, try to reconnect")
+		goto Connection
+	}
+	defer q.Close()
+Bind:
+	err := q.Bind(config.SystemConfig.RabbitMQ.Queue)
+	if err != nil {
+		time.Sleep(time.Second * 3)
+		fmt.Println("[!] rabbitmq bind fail, try to rebind")
+		goto Bind
+	}
 	c := q.Consume()
 	go removeExpiredDataServer()
 	for msg := range c {
 		dataServer, e := strconv.Unquote(string(msg.Body))
-		if e != nil {
-			panic(e)
+		if e == nil {
+			mutex.Lock()
+			dataServers[dataServer] = time.Now()
+			mutex.Unlock()
+		} else {
+			fmt.Println(fmt.Sprintf("[!] hearbeat Wrongful: %v", e))
 		}
-		mutex.Lock()
-		dataServers[dataServer] = time.Now()
-		mutex.Unlock()
 	}
 }
 
@@ -48,7 +63,7 @@ func removeExpiredDataServer() {
 }
 
 // 获取随机IP
-func getRandomServerIp() (server []string){
+func GetRandomServerIp() (server []string){
 
 	rand.Seed(time.Now().Unix())
 
@@ -62,5 +77,6 @@ func getRandomServerIp() (server []string){
 	for _, k := range rand.Perm(len(dataServers)) {
 		server = append(server, serverIP[k])
 	}
+	mutex.Unlock()
 	return server
 }

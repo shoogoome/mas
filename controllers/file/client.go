@@ -12,6 +12,7 @@ import (
 	"mas/models"
 	"mas/physicalTransmission"
 	"mas/physicalTransmission/service"
+	fileService "mas/service/file"
 	"mas/utils/config"
 	"mas/utils/gzipUtils"
 	"mas/utils/hashUtils"
@@ -32,7 +33,15 @@ import (
 // get: hash
 // @router /api/token/upload [get]
 func (this *FileSystemController) GenerateUploadToken() {
-	this.generateToken(tokenUtils.Upload)
+	this.Verification()
+	hash := this.GetString("hash")
+	token, except := fileService.GenerateTokenService(tokenUtils.Upload, hash)
+	if except != nil {
+		this.Exception(except)
+	}
+	this.ReturnJSON(map[string]string{
+		"token": token,
+	})
 }
 
 // 生成下载令牌
@@ -40,7 +49,15 @@ func (this *FileSystemController) GenerateUploadToken() {
 // get: hash
 // @router /api/token/download [get]
 func (this *FileSystemController) GenerateDownloadToken() {
-	this.generateToken(tokenUtils.Download)
+	this.Verification()
+	hash := this.GetString("hash")
+	token, except := fileService.GenerateTokenService(tokenUtils.Download, hash)
+	if except != nil {
+		this.Exception(except)
+	}
+	this.ReturnJSON(map[string]string{
+		"token": token,
+	})
 }
 
 // 获取文件信息
@@ -91,8 +108,11 @@ func (this *FileSystemController) UploadSingle() {
 		Persistence: false,
 	}
 	// 保存文件
+	except = fileService.SaveFile(dd.Bytes(), fileInfo, hash)
+	if except != nil {
+		this.Exception(except)
+	}
 	dao.SaveFileInfo(fileInfo)
-	this.saveFile(dd.Bytes(), fileInfo, hash)
 	this.ReturnJSON(fileInfo)
 }
 
@@ -298,7 +318,10 @@ func (this *FileSystemController) Finish() {
 
 	// 保存文件
 	fileInfo.FileSize = int64(len(ddByte))
-	this.saveFile(ddByte, *fileInfo, hash)
+	except = fileService.SaveFile(ddByte, *fileInfo, hash)
+	if except != nil {
+		this.Exception(except)
+	}
 	// 删除临时分块
 	service.GRPCDeleteChuck(serverIPs, hash)
 	this.ReturnJSON(fileInfo)
@@ -312,7 +335,7 @@ func (this *FileSystemController) Download() {
 
 	// 查询文件信息
 	fileInfo := dao.GetFileInfo(hash)
-	if fileInfo == nil{
+	if fileInfo == nil {
 		this.Exception(http_err.FileIsNotExists())
 	}
 	if !fileInfo.Persistence {
@@ -326,11 +349,11 @@ func (this *FileSystemController) Download() {
 	clients, _, except := physicalTransmission.NewAppointGrpcConnection(fileInfo.StorageServerIp)
 	for index := range fileInfo.StorageServerIp {
 		go func(index int, lock chan int) {
-			client := <- clients
+			client := <-clients
 			shardChuckDataInfo, except := client.Download(context.Background(), &pb.ShardChuckMetaData{
 				FileHash: hash,
-				Index: int64(index),
-				Shard: true,
+				Index:    int64(index),
+				Shard:    true,
 			})
 			if except != nil {
 				lock <- 0
@@ -344,7 +367,7 @@ func (this *FileSystemController) Download() {
 	}
 	// 等待读取所有分片次数
 	for i := 0; i < models.RsConfig.AllShards; i++ {
-		<- lock
+		<-lock
 	}
 	// 获取原文件
 	var file io.ReadSeeker
@@ -368,4 +391,3 @@ func (this *FileSystemController) Download() {
 	this.Ctx.Output.Header("Content-Length", fmt.Sprintf("%d", len(dd)))
 	http.ServeContent(this.Ctx.Output.Context.ResponseWriter, this.Ctx.Output.Context.Request, fileInfo.FileName, time.Now(), file)
 }
-

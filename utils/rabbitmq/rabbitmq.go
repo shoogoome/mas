@@ -3,6 +3,7 @@ package rabbitmq
 import (
 	"encoding/json"
 	"github.com/streadway/amqp"
+	"mas/exception/http_err"
 )
 
 type RabbitMQ struct {
@@ -11,16 +12,16 @@ type RabbitMQ struct {
 	exchange 	string
 }
 
-func New(s string) *RabbitMQ {
+func New(s string) (*RabbitMQ, interface{}) {
 	// 连接rabbitMQ服务器
 	conn, e := amqp.Dial(s)
 	if e != nil {
-		panic(e)
+		return nil, http_err.RabbitmqConnectionFail()
 	}
 	// 打开唯一并发通道
 	ch, e := conn.Channel()
 	if e != nil {
-		panic(e)
+		return nil, http_err.RabbitmqConnectionFail()
 	}
 	// 创建队列
 	q, e := ch.QueueDeclare(
@@ -32,16 +33,16 @@ func New(s string) *RabbitMQ {
 		nil,
 		)
 	if e != nil {
-		panic(e)
+		return nil, http_err.RabbitmqConnectionFail()
 	}
 
 	mq := new(RabbitMQ)
 	mq.channel = ch
 	mq.Name = q.Name
-	return mq
+	return mq, nil
 }
 
-func (q *RabbitMQ) Bind(exchange string) {
+func (q *RabbitMQ) Bind(exchange string) interface{} {
 	// 绑定队列
 	e := q.channel.QueueBind(
 		q.Name,
@@ -51,9 +52,10 @@ func (q *RabbitMQ) Bind(exchange string) {
 		nil,
 		)
 	if e != nil {
-		panic(e)
+		return http_err.RabbitmqBindFail()
 	}
 	q.exchange = exchange
+	return nil
 }
 
 

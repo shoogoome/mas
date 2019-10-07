@@ -31,7 +31,6 @@ type RabbitMQConfig struct {
 	Queue string `yaml:"queue" json:"queue"`
 }
 
-
 type ServerConfig struct {
 	// 分片存储根目录
 	FileRootPath string
@@ -39,14 +38,6 @@ type ServerConfig struct {
 	FileTempPath string
 	// 是否启动gzip
 	Gzip bool
-	// 所有服务ip
-	ServerIp []string
-	// 活跃信号
-	SignalUrl string
-	// 存储路由
-	StorageUrl string
-	// 存储分块路由
-	StorageChuckUrl string
 	// 分块上传最大大小
 	ChuckMaxSize int64
 	// 系统token
@@ -55,8 +46,6 @@ type ServerConfig struct {
 	Key string
 	// 当前服务ip
 	Server string
-	// 服务总数
-	ServerNum int
 	// 最大分片重发次数
 	Resend int
 	// gRPC连接重试

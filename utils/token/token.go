@@ -26,11 +26,11 @@ const (
 func GenerateToken(info models.FileToken) (string, interface{}) {
 
 	key := config.SystemConfig.Server.Key
-	key = strings.Replace(key, " ", "", -1);
+	key = strings.Replace(key, " ", "", -1)
 	if key == "" {
 		return "", http_err.GetEnvKeyFail()
 	}
-	infoString, err := json.Marshal(info);
+	infoString, err := json.Marshal(info)
 	if err != nil {
 		return "", http_err.MarshalFail()
 	}

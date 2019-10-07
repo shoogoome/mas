@@ -1,8 +1,8 @@
 package run
 
 import (
+	"fmt"
 	"google.golang.org/grpc"
-	"log"
 	pb "mas/models/physicalTransmission"
 	"mas/utils/config"
 	"mas/utils/rabbitmq"
@@ -12,7 +12,14 @@ import (
 
 // 定期发送心跳信号
 func StartHeartbeat() {
-	q := rabbitmq.New(config.SystemConfig.RabbitMQ.Host)
+	fmt.Println("[*] send Heartbeat signal...")
+Connection:
+	q, e := rabbitmq.New(config.SystemConfig.RabbitMQ.Host)
+	if e != nil {
+		time.Sleep(time.Second * 3)
+		fmt.Println("[!] rabbitmq connection fail, try to reconnect")
+		goto Connection
+	}
 	defer q.Close()
 	for {
 		q.Publish(config.SystemConfig.RabbitMQ.Queue, config.SystemConfig.Server.Server)
@@ -28,19 +35,21 @@ TCP:
 	lis, err := net.Listen("tcp", config.SystemConfig.Server.GrpcPort)
 	if err != nil {
 		time.Sleep(time.Second * 3)
-		log.Println("[!] tcp连接错误: ", err)
+		fmt.Println("[!] tcp connection fail...: ", err)
 		goto TCP
 	}
 	s := grpc.NewServer()
+	fmt.Println("[*] tcp connection success...")
+	// 启动活跃心跳信号
+	go StartHeartbeat()
 	// gRPC注册
 REGISTER:
 	pb.RegisterPhysicalTransmissionServer(s, &server{})
 	if err = s.Serve(lis); err != nil {
 		time.Sleep(time.Second * 3)
-		log.Println("[!] gRPC注册失败: ", err)
+		fmt.Println("[!] grpc register fail...: ", err)
 		goto REGISTER
 	}
-	// 启动活跃心跳信号
-	go StartHeartbeat()
+	fmt.Println("[*] grpc register success...")
 }
 

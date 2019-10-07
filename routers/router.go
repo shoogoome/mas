@@ -4,6 +4,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/plugins/cors"
 	"mas/controllers/file"
+	"mas/controllers/system"
 )
 
 func init() {
@@ -17,4 +18,6 @@ func init() {
 	}))
 	// 文件模块
 	beego.Include(&file.FileSystemController{})
+	// 系统模块
+	beego.Include(&system.SystemController{})
 }

@@ -1,6 +1,7 @@
 package file
 
 import (
+	"fmt"
 	"mas/dao"
 	"mas/exception/http_err"
 	"mas/models"
@@ -14,9 +15,8 @@ import (
 )
 
 // 生成token
-func (this *FileSystemController) generateToken(tokenType int) {
-	this.Verification()
-	hash := this.GetString("hash")
+func GenerateTokenService(tokenType int, hash string) (string, interface{}) {
+
 	var fileToken = models.FileToken{
 		Hash:       hash,
 		TokenType:  tokenType,
@@ -26,40 +26,48 @@ func (this *FileSystemController) generateToken(tokenType int) {
 	token, except := tokenUtils.GenerateToken(fileToken)
 
 	if token == "" {
-		this.Exception(except)
+		return "", except
 	}
-	this.ReturnJSON(map[string]string{
-		"token": token,
-	})
+	return token, nil
 }
 
 // 保存文件
-func (this *FileSystemController) saveFile(ddbyte []byte, fileInfo models.FileInfo, hash string) {
+func SaveFile(ddbyte []byte, fileInfo models.FileInfo, hash string) interface{} {
 
 	// gzip压缩
 	if config.SystemConfig.Server.Gzip {
 		ddbyte, _ = gzipUtils.GzipFile(ddbyte, fileInfo.FileName)
 	}
+
+	fmt.Println("[*] gzip success...")
+
 	// server
 	clients, ips, except := physicalTransmission.NewRandomGrpcConnection()
 	if except != nil {
-		this.Exception(except)
+		return except
 	}
+
+	fmt.Println("[*] get grpc client success")
+
 	// 文件数据切片
 	encode := rs.NewEncoder(ddbyte)
 	shards, except := encode.Encode()
 	if except != nil {
-		this.Exception(except)
+		return except
 	}
+
+	fmt.Println("[*] data encode success")
 
 	var statusMap = make(chan models.ShardsStatus, models.RsConfig.AllShards)
 	// 数据分片发送至存储服务端
 	for index, shard := range shards {
 		ip := <-ips
 		fileInfo.StorageServerIp = append(fileInfo.StorageServerIp, ip)
-		client := <-clients
+		client := <- clients
 		go service.GRPCUpload(client, shard, index, hash, ip, statusMap)
 	}
+
+	fmt.Println("[*] send over")
 
 	// 读取结果 如果有允许损坏分片数量之内的分片数量损坏时
 	// 重新修复分片并再次上传
@@ -69,8 +77,9 @@ func (this *FileSystemController) saveFile(ddbyte []byte, fileInfo models.FileIn
 	// 允许单一分片重发次数
 	resend := make([]int, count)
 	for {
+		fmt.Println("[*] accept message: ", count)
 		// 读取分片传输数据
-		var status = <-statusMap
+		var status = <- statusMap
 		count -= 1
 		if !status.Status {
 			// 分片重发
@@ -83,7 +92,7 @@ func (this *FileSystemController) saveFile(ddbyte []byte, fileInfo models.FileIn
 				// 重发次数超出设定 认定失败
 				// 删除数据分片
 				go service.GRPCDeleteShard(fileInfo.StorageServerIp, hash)
-				this.Exception(http_err.ResendOver())
+				return http_err.ResendOver()
 			}
 		}
 		// 所有分片处理完毕
@@ -95,7 +104,11 @@ func (this *FileSystemController) saveFile(ddbyte []byte, fileInfo models.FileIn
 	fileInfo.Persistence = true
 	except = dao.UpdateFileInfo(fileInfo)
 	if except != nil {
-		this.Exception(except)
+		return except
 	}
+
+	fmt.Println("[*] over")
+
+	return nil
 }
 

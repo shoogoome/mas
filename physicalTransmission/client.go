@@ -2,7 +2,6 @@ package physicalTransmission
 
 import (
 	"google.golang.org/grpc"
-	"log"
 	"mas/exception/http_err"
 	"mas/models"
 	"mas/models/physicalTransmission"
@@ -55,7 +54,6 @@ func InitGrpcClientPool() {
 }
 */
 
-var phmutex sync.RWMutex
 
 // 创建指定服务端gRPC连接
 func NewAppointGrpcConnection(server []string) (chan physicalTransmission.PhysicalTransmissionClient, chan string, interface{}) {
@@ -64,20 +62,19 @@ func NewAppointGrpcConnection(server []string) (chan physicalTransmission.Physic
 
 // 创建随机服务端gRPC连接
 func NewRandomGrpcConnection() (chan physicalTransmission.PhysicalTransmissionClient, chan string, interface{}){
-	return newGrpcClientConnection(getRandomServerIp())
+	return newGrpcClientConnection(GetRandomServerIp())
 }
 
 // 新建gRPC连接
 func newGrpcConnection(ip string, ch chan physicalTransmission.PhysicalTransmissionClient, realIps chan string, lock chan bool) {
 
+	var phmutex sync.RWMutex
 	rand.Seed(time.Now().Unix())
-	index := rand.Intn(config.SystemConfig.Server.ServerNum)
 
 	retry := config.SystemConfig.Server.GrpcRetry
 GRPC:
 	conn, err := grpc.Dial(ip, grpc.WithInsecure())
 	if err != nil {
-		log.Printf("[!] 存储服务gRPC连接失败 [%s]: %v\n", config.SystemConfig.Server.ServerIp[index], err)
 		// 重试
 		if retry > 0 {
 			retry -= 1
@@ -87,7 +84,7 @@ GRPC:
 			return
 		}
 	}
-	mutex.Lock()
+	phmutex.Lock()
 	ch <- physicalTransmission.NewPhysicalTransmissionClient(conn)
 	realIps <- ip
 	phmutex.Unlock()

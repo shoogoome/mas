@@ -79,8 +79,6 @@ func (this *ControllerBase) Exception (error interface{}) {
 	this.StopRun()
 }
 
-
-
 // redis数据库连接
 func (this *ControllerBase) RedisConn() redis.Conn{
 

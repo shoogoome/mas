@@ -101,3 +101,10 @@ func FileIsNotPersistence() (ctx MASExceptBase) {
 	ctx.Msg = "文件未完成上传"
 	return ctx
 }
+
+func GetFileListFail() (ctx MASExceptBase) {
+	ctx.Status = false
+	ctx.Code = 5414
+	ctx.Msg = "获取文件列表失败"
+	return ctx
+}
