@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/gomodule/redigo/redis"
 	"mas/exception/http_err"
 	"mas/models"
 	"mas/utils/config"
@@ -41,17 +42,19 @@ func GenerateToken(info models.FileToken) (string, interface{}) {
 /**
 验证token
 */
-func VerificationToken(token string, tokenType int) (string, interface{}) {
+func VerificationToken(token string, tokenType int, conn redis.Conn) (string, interface{}) {
+
+	defer conn.Close()
 
 	var fileToken models.FileToken
 	// 环境变量异常
 	key := config.SystemConfig.Server.Key
-	key = strings.Replace(key, " ", "", -1);
+	key = strings.Replace(key, " ", "", -1)
 	if key == "" {
 		return "", http_err.GetEnvKeyFail()
 	}
 	// token格式错误
-	tokenList := strings.Split(token, ".");
+	tokenList := strings.Split(token, ".")
 	if len(tokenList) != 2 {
 		return "", http_err.TokenVerificationFail()
 	}
@@ -63,7 +66,7 @@ func VerificationToken(token string, tokenType int) (string, interface{}) {
 		return "", http_err.TokenVerificationFail()
 	}
 	// base64解码
-	infoString, err := base64.StdEncoding.DecodeString(payloadString);
+	infoString, err := base64.StdEncoding.DecodeString(payloadString)
 	if err != nil {
 		return "", http_err.TokenVerificationFail()
 	}
@@ -77,7 +80,13 @@ func VerificationToken(token string, tokenType int) (string, interface{}) {
 		return "", http_err.TokenVerificationFail()
 	}
 	// 验证token是否过期
-	if time.Now().Unix() >= fileToken.ExpireAt {
+	exTime, err := redis.Int(conn.Do("get", token))
+	if err != nil || int64(exTime) + fileToken.CreateTime < time.Now().Unix() {
+		return "", http_err.TokenVerificationFail()
+	}
+	// 添加时效
+	_, err = conn.Do("set", token, exTime + 10, "EX", int64(exTime) - (time.Now().Unix() - fileToken.CreateTime) + 10)
+	if err != nil {
 		return "", http_err.TokenVerificationFail()
 	}
 	return fileToken.Hash, nil

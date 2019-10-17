@@ -30,7 +30,7 @@ func (this *ControllerBase) Verification() {
 func (this *ControllerBase) LoadHash(tokenType int) string {
 
 	token := this.Ctx.Input.Header("token")
-	hash, except := tokenUtils.VerificationToken(token, tokenType)
+	hash, except := tokenUtils.VerificationToken(token, tokenType, this.RedisConn())
 	if except != nil {
 		this.Exception(except)
 	}
@@ -80,7 +80,7 @@ func (this *ControllerBase) Exception (error interface{}) {
 }
 
 // redis数据库连接
-func (this *ControllerBase) RedisConn() redis.Conn{
+func (this *ControllerBase) RedisConn() redis.Conn {
 
 	connectString := fmt.Sprintf(
 		"%s:%d",

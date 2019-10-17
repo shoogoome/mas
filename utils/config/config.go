@@ -34,6 +34,8 @@ func InitEnvConfig() {
 	SystemConfig.Server.Resend, _ = strconv.Atoi(os.Getenv("Resend"))
 	SystemConfig.Server.GrpcPort = os.Getenv("GrpcPort")
 	SystemConfig.Server.Resend, _ = strconv.Atoi(os.Getenv("GrpcRetry"))
+	size, _ := strconv.Atoi(os.Getenv("ChuckMaxSize"))
+	SystemConfig.Server.ChuckMaxSize = int64(size)
 	if os.Getenv("Gzip") == "true" {
 		SystemConfig.Server.Gzip = true
 	} else {

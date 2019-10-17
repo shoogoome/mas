@@ -22,7 +22,7 @@ func NewDecoder(shards [][]byte, serverIP []string) *decoder {
 
 func (this *decoder) Decode(hash string) ([]byte, interface{}) {
 	// 检查数据分片是否正常，不正常则尝试修复数据
-	ok, err := this.enc.Verify(this.shards);
+	ok, err := this.enc.Verify(this.shards)
 	if !ok {
 
 		unHealth := this.healthExamination()

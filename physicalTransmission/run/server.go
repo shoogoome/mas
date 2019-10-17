@@ -43,7 +43,6 @@ func (server) Download(context context.Context, shardChuckMetaData *pb.ShardChuc
 	} else {
 		filePath = config.SystemConfig.Server.FileTempPath
 	}
-
 	fileName := fmt.Sprintf("%s.%d", shardChuckMetaData.FileHash, shardChuckMetaData.Index)
 	fileBytes := getFile(filePath, fileName)
 	// TODO: 异常处理
@@ -73,6 +72,7 @@ func getFile(fileRootPath string, fileName string) []byte {
 	)
 	fileBytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
+		fmt.Println(err)
 		return nil
 	}
 	return fileBytes

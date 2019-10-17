@@ -6,6 +6,8 @@ import (
 	"mas/models"
 	"mas/models/physicalTransmission"
 	"mas/utils/config"
+	"strings"
+
 	//"mas/utils/rs"
 	"math/rand"
 	"sync"
@@ -83,10 +85,11 @@ GRPC:
 			lock <- false
 			return
 		}
+
 	}
 	phmutex.Lock()
 	ch <- physicalTransmission.NewPhysicalTransmissionClient(conn)
-	realIps <- ip
+	realIps <- strings.Split(ip, ":")[0]
 	phmutex.Unlock()
 	lock <- true
 }
@@ -103,7 +106,8 @@ func newGrpcClientConnection(server []string) (chan physicalTransmission.Physica
 
 	conn := make(chan physicalTransmission.PhysicalTransmissionClient, dataLenght)
 	realIps := make(chan string, dataLenght)
-	lock := make(chan bool)
+	lock := make(chan bool, dataLenght)
+
 	// 填充gRPC服务连接
 	for _, ip := range server {
 		newGrpcConnection(ip + config.SystemConfig.Server.GrpcPort, conn, realIps, lock)

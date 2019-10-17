@@ -35,7 +35,7 @@ import (
 func (this *FileSystemController) GenerateUploadToken() {
 	this.Verification()
 	hash := this.GetString("hash")
-	token, except := fileService.GenerateTokenService(tokenUtils.Upload, hash)
+	token, except := fileService.GenerateTokenService(tokenUtils.Upload, hash, this.RedisConn())
 	if except != nil {
 		this.Exception(except)
 	}
@@ -51,7 +51,7 @@ func (this *FileSystemController) GenerateUploadToken() {
 func (this *FileSystemController) GenerateDownloadToken() {
 	this.Verification()
 	hash := this.GetString("hash")
-	token, except := fileService.GenerateTokenService(tokenUtils.Download, hash)
+	token, except := fileService.GenerateTokenService(tokenUtils.Download, hash, this.RedisConn())
 	if except != nil {
 		this.Exception(except)
 	}
@@ -67,7 +67,11 @@ func (this *FileSystemController) GenerateDownloadToken() {
 func (this *FileSystemController) GetFileInfo() {
 	this.Verification()
 	hash := this.GetString("hash")
-	this.ReturnJSON(dao.GetFileInfo(hash))
+	fileInfo := dao.GetFileInfo(hash)
+	if fileInfo != nil {
+		fileInfo.StorageServerIp = nil
+	}
+	this.ReturnJSON(fileInfo)
 }
 
 // 单文件上传
@@ -76,13 +80,14 @@ func (this *FileSystemController) GetFileInfo() {
 // @router /api/file/upload/single [post]
 func (this *FileSystemController) UploadSingle() {
 	hash := this.LoadHash(tokenUtils.Upload)
-	// 查看文件是否存在
-	if dao.SearchFile(hash) {
-		this.ReturnJSON(map[string]string{
-			"status": "success",
-		})
+	// 若文件存在则直接return文件信息
+	rel := dao.GetFileInfo(hash)
+	if rel != nil && rel.Persistence {
+		rel.StorageServerIp = nil
+		this.ReturnJSON(rel)
 		return
 	}
+
 	// 获取file
 	file, headers, err := this.GetFile("file")
 	if err != nil {
@@ -108,11 +113,13 @@ func (this *FileSystemController) UploadSingle() {
 		Persistence: false,
 	}
 	// 保存文件
-	except = fileService.SaveFile(dd.Bytes(), fileInfo, hash)
+	dao.SaveFileInfo(fileInfo)
+	except = fileService.SaveFile(dd.Bytes(), &fileInfo, hash)
 	if except != nil {
 		this.Exception(except)
 	}
-	dao.SaveFileInfo(fileInfo)
+	// 过滤存储数据
+	fileInfo.StorageServerIp = nil
 	this.ReturnJSON(fileInfo)
 }
 
@@ -120,34 +127,31 @@ func (this *FileSystemController) UploadSingle() {
 // 给分片上传作准备，且在获取上传token之后进行
 // header: token
 // get: name 文件名称
-// get: size 文件大小
 // @router /api/file/upload/init [get]
 func (this *FileSystemController) InitFileInfo() {
 
 	hash := this.LoadHash(tokenUtils.Upload)
-
-	size := this.GetString("size")
-	sizeInt, except := strconv.Atoi(size)
-	if except != nil {
-		this.Exception(http_err.LackParams("文件长度[size]"))
-	}
-	this.ReturnJSON(models.FileInfo{
+	fileInfo := models.FileInfo{
 		FileHash:    hash,
 		FileName:    this.GetString("name"),
-		FileSize:    int64(sizeInt),
 		Persistence: false,
-	})
+	}
+	dao.SaveFileInfo(fileInfo)
+	this.ReturnJSON(fileInfo)
 }
 
 // 分片上传
 // header: token
-// get: chunk 分块序号 从1开始
+// get: chuck 分块序号 从1开始
 // form-data: file 分块数据
 // @router /api/file/upload/chuck [post]
 func (this *FileSystemController) ChunkUpload() {
 
 	hash := this.LoadHash(tokenUtils.Upload)
 	chuck := this.GetString("chuck")
+	if chuck == "" {
+		this.Exception(http_err.LackParams("分片数[chuck]"))
+	}
 
 	// 查询文件大小是否符合要求
 	file, h, err := this.GetFile("file")
@@ -238,15 +242,18 @@ func (this *FileSystemController) Finish() {
 	if err != nil {
 		this.Exception(http_err.UploadFail())
 	}
+
 	// 查询是否已存储
 	var chuckInfo models.RedisChucks
 	if len(chuckInfoString) == 0 {
 		this.Exception(http_err.UploadFail())
 	}
+
 	err = json.Unmarshal([]byte(chuckInfoString), &chuckInfo)
 	if err != nil {
 		this.Exception(http_err.UploadFail())
 	}
+
 	// 读取文件
 	chuckNum := len(chuckInfo.ChuckInfo)
 	var mu sync.RWMutex
@@ -269,13 +276,13 @@ func (this *FileSystemController) Finish() {
 
 		serverIPs = append(serverIPs, ip)
 		go func(c string, nip string, lock chan int) {
-			chuckInt, except := strconv.Atoi(chuck)
+			chuckInt, except := strconv.Atoi(c)
 			if except != nil {
 				lock <- 0
 				return
 			}
 			// 远端下载
-			client := clientMap[ip]
+			client := clientMap[nip]
 			shardChuckDataInfo, except := client.Download(context.Background(), &pb.ShardChuckMetaData{
 				FileHash: hash,
 				Index:    int64(chuckInt),
@@ -318,7 +325,8 @@ func (this *FileSystemController) Finish() {
 
 	// 保存文件
 	fileInfo.FileSize = int64(len(ddByte))
-	except = fileService.SaveFile(ddByte, *fileInfo, hash)
+	except = fileService.SaveFile(ddByte, fileInfo, hash)
+	fileInfo.StorageServerIp = nil
 	if except != nil {
 		this.Exception(except)
 	}
@@ -329,9 +337,21 @@ func (this *FileSystemController) Finish() {
 
 // 文件下载
 // header: token 下载令牌
+// get seek 断点下载起始游标
 // @router /api/file/upload/download [get]
 func (this *FileSystemController) Download() {
 	hash := this.LoadHash(tokenUtils.Download)
+
+	// 获取偏移量
+	seek := this.GetString("seek")
+	seekInt := -1
+	if seek != "" {
+		seeknt, err := strconv.Atoi(seek)
+		if err != nil {
+			this.Exception(http_err.ParamsIsNotStandard("seek"))
+		}
+		seekInt = seeknt
+	}
 
 	// 查询文件信息
 	fileInfo := dao.GetFileInfo(hash)
@@ -347,12 +367,13 @@ func (this *FileSystemController) Download() {
 	var mu sync.RWMutex
 	var lock = make(chan int)
 	clients, _, except := physicalTransmission.NewAppointGrpcConnection(fileInfo.StorageServerIp)
-	for index := range fileInfo.StorageServerIp {
-		go func(index int, lock chan int) {
-			client := <-clients
-			shardChuckDataInfo, except := client.Download(context.Background(), &pb.ShardChuckMetaData{
+
+	for index := 0; index < len(fileInfo.StorageServerIp); index++ {
+		client := <- clients
+		go func(inde int, lock chan int, cli pb.PhysicalTransmissionClient) {
+			shardChuckDataInfo, except := cli.Download(context.Background(), &pb.ShardChuckMetaData{
 				FileHash: hash,
-				Index:    int64(index),
+				Index:    int64(inde),
 				Shard:    true,
 			})
 			if except != nil {
@@ -360,10 +381,10 @@ func (this *FileSystemController) Download() {
 				return
 			}
 			mu.Lock()
-			shards[index] = shardChuckDataInfo.FileData
+			shards[inde] = shardChuckDataInfo.FileData
 			mu.Unlock()
 			lock <- 1
-		}(index, lock)
+		} (index, lock, client)
 	}
 	// 等待读取所有分片次数
 	for i := 0; i < models.RsConfig.AllShards; i++ {
@@ -374,18 +395,30 @@ func (this *FileSystemController) Download() {
 	decode := rs.NewDecoder(shards, fileInfo.StorageServerIp)
 	dd, except := decode.Decode(hash)
 	if except != nil {
+		// 删除数据分片并更新数据库
 		service.GRPCDeleteShard(fileInfo.StorageServerIp, hash)
+		fileInfo.Persistence = false
+		dao.UpdateFileInfo(*fileInfo)
 		this.Exception(except)
 	}
 	// gunzip
 	if config.SystemConfig.Server.Gzip {
 		dd, except = gzipUtils.GunzipFile(dd)
 		if except != nil {
+			// 删除数据分片并更新数据库
 			service.GRPCDeleteShard(fileInfo.StorageServerIp, hash)
+			fileInfo.Persistence = false
+			dao.UpdateFileInfo(*fileInfo)
 			this.Exception(except)
 		}
 	}
+
+	// 偏移输出
+	if seekInt != -1 {
+		dd = dd[seekInt:]
+	}
 	file = bytes.NewReader(dd)
+
 	// 输出文件
 	this.Ctx.Output.Header("Content-Disposition", "attachment; filename="+fileInfo.FileName)
 	this.Ctx.Output.Header("Content-Length", fmt.Sprintf("%d", len(dd)))

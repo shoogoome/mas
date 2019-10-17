@@ -38,3 +38,10 @@ func LackParams(par string) (ctx MASExceptBase){
 	ctx.Msg = fmt.Sprintf("%s 参数为必填参数", par)
 	return ctx
 }
+
+func ParamsIsNotStandard(par string) (ctx MASExceptBase){
+	ctx.Status = false
+	ctx.Code = 5205
+	ctx.Msg = fmt.Sprintf("%s 参数为不规范", par)
+	return ctx
+}

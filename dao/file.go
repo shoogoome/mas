@@ -43,16 +43,13 @@ func SaveFileInfo(fileInfo models.FileInfo) interface{} {
 func UpdateFileInfo(fileInfo models.FileInfo) interface{} {
 	// 写入到数据库
 	collection := mongo.MongoConn.Collection("fileserver")
-
-	_, err := collection.UpdateOne(
+	_, err := collection.UpdateMany(
 		context.Background(),
 		&bson.D{
 			{"hash", fileInfo.FileHash},
 		},
 		&bson.M{
-			"hash":      fileInfo.FileHash,
-			"size":      fileInfo.FileSize,
-			"server_ip": fileInfo.StorageServerIp,
+			"$set": fileInfo,
 		},
 	)
 	if err != nil {

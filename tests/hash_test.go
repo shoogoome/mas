@@ -12,7 +12,7 @@ import (
 
 func TestFileHash(t *testing.T) {
 
-	filebyte, err := ioutil.ReadFile("/Users/lzl/Documents/头像.jpeg"); if err != nil {
+	filebyte, err := ioutil.ReadFile("/Users/lzl/Desktop/1.jpeg"); if err != nil {
 		log.Println(fmt.Sprintf("%v", err))
 		os.Exit(1)
 	}

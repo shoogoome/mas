@@ -1,7 +1,7 @@
 package file
 
 import (
-	"fmt"
+	"github.com/gomodule/redigo/redis"
 	"mas/dao"
 	"mas/exception/http_err"
 	"mas/models"
@@ -15,39 +15,41 @@ import (
 )
 
 // 生成token
-func GenerateTokenService(tokenType int, hash string) (string, interface{}) {
+// 十分钟内第一次加载有效
+// 此后每次加载hash添加60s延时
+func GenerateTokenService(tokenType int, hash string, conn redis.Conn) (string, interface{}) {
 
+	defer conn.Close()
 	var fileToken = models.FileToken{
 		Hash:       hash,
 		TokenType:  tokenType,
 		CreateTime: time.Now().Unix(),
-		ExpireAt:   time.Now().Unix() + 86400,
 	}
 	token, except := tokenUtils.GenerateToken(fileToken)
-
 	if token == "" {
 		return "", except
+	}
+	// 添加token时效
+	_, err := conn.Do("set", token, 120, "EX", 120)
+	if err != nil {
+		return "", http_err.RedisConnectExcept()
 	}
 	return token, nil
 }
 
 // 保存文件
-func SaveFile(ddbyte []byte, fileInfo models.FileInfo, hash string) interface{} {
+func SaveFile(ddbyte []byte, fileInfo *models.FileInfo, hash string) interface{} {
 
 	// gzip压缩
 	if config.SystemConfig.Server.Gzip {
 		ddbyte, _ = gzipUtils.GzipFile(ddbyte, fileInfo.FileName)
 	}
 
-	fmt.Println("[*] gzip success...")
-
 	// server
 	clients, ips, except := physicalTransmission.NewRandomGrpcConnection()
 	if except != nil {
 		return except
 	}
-
-	fmt.Println("[*] get grpc client success")
 
 	// 文件数据切片
 	encode := rs.NewEncoder(ddbyte)
@@ -56,18 +58,14 @@ func SaveFile(ddbyte []byte, fileInfo models.FileInfo, hash string) interface{} 
 		return except
 	}
 
-	fmt.Println("[*] data encode success")
-
 	var statusMap = make(chan models.ShardsStatus, models.RsConfig.AllShards)
 	// 数据分片发送至存储服务端
 	for index, shard := range shards {
-		ip := <-ips
+		ip := <- ips
 		fileInfo.StorageServerIp = append(fileInfo.StorageServerIp, ip)
 		client := <- clients
 		go service.GRPCUpload(client, shard, index, hash, ip, statusMap)
 	}
-
-	fmt.Println("[*] send over")
 
 	// 读取结果 如果有允许损坏分片数量之内的分片数量损坏时
 	// 重新修复分片并再次上传
@@ -77,7 +75,6 @@ func SaveFile(ddbyte []byte, fileInfo models.FileInfo, hash string) interface{} 
 	// 允许单一分片重发次数
 	resend := make([]int, count)
 	for {
-		fmt.Println("[*] accept message: ", count)
 		// 读取分片传输数据
 		var status = <- statusMap
 		count -= 1
@@ -102,12 +99,10 @@ func SaveFile(ddbyte []byte, fileInfo models.FileInfo, hash string) interface{} 
 	}
 	// 文件信息存入数据库
 	fileInfo.Persistence = true
-	except = dao.UpdateFileInfo(fileInfo)
+	except = dao.UpdateFileInfo(*fileInfo)
 	if except != nil {
 		return except
 	}
-
-	fmt.Println("[*] over")
 
 	return nil
 }
