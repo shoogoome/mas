@@ -131,6 +131,12 @@ func (this *FileSystemController) UploadSingle() {
 func (this *FileSystemController) InitFileInfo() {
 
 	hash := this.LoadHash(tokenUtils.Upload)
+	rel := dao.GetFileInfo(hash)
+	if rel != nil && rel.Persistence {
+		rel.StorageServerIp = nil
+		this.ReturnJSON(rel)
+		return
+	}
 	fileInfo := models.FileInfo{
 		FileHash:    hash,
 		FileName:    this.GetString("name"),
